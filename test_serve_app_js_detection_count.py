@@ -1,4 +1,4 @@
-"""Le compteur décrit la détection configurée, pas l'armement du système."""
+"""The live dashboard count reports the number of cameras and armed cameras."""
 import json
 import re
 import shutil
@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 class TestsDetectionCount(unittest.TestCase):
-    def test_detection_count_is_explicit_in_both_languages(self):
+    def test_count_is_english_and_camera_count_is_pluralized(self):
         node = shutil.which("node")
         if node is None:
             self.skipTest("node introuvable")
@@ -16,13 +16,14 @@ class TestsDetectionCount(unittest.TestCase):
         patterns = [r"^const I18N = \{.*?^\};", r"^function t\(k\) \{[^\n]*\}$",
                     r"^function tf\(k, v\) \{.*?^\}", r"^function renderLive\(\) \{.*?^\}"]
         code = "\n".join(re.search(p, source, re.M | re.S).group(0) for p in patterns)
-        for lang, expected in (("en", "3 camera(s) · 2 with detection on"),
-                               ("fr", "3 caméra(s) · 2 avec détection active")):
+        for cameras, expected in (([{"armed": True}, {"armed": True}, {"armed": False}],
+                                   "3 cameras · 2 armed"),
+                                  ([{"armed": True}], "1 camera · 1 armed")):
             for system_armed in (False, True):
-                with self.subTest(lang=lang, system_armed=system_armed):
+                with self.subTest(expected=expected, system_armed=system_armed):
                     systems = [{"name": "Test", "key": "test", "armed": system_armed,
-                                "cameras": [{"armed": True}, {"armed": True}, {"armed": False}]}]
-                    script = ("let _lang = " + json.dumps(lang) + "; let system = {systems: "
+                                "cameras": cameras}]
+                    script = ("let _lang = \"fr\"; let system = {systems: "
                               + json.dumps(systems) + "}; let rafraichirVignettes = false; "
                               "const elements = {count: {}, list: {}}; const $ = k => elements[k]; "
                               "const nomsDirectsActifs = () => []; const h = v => v; "

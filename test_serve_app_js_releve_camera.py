@@ -51,15 +51,15 @@ class TestsReleveEtTemperature(unittest.TestCase):
             langue, f"dateReleve({{measured_at: {json.dumps(iso)}, "
                     f"measured_today: {str(aujourdhui).lower()}}}, {json.dumps(locale)})")
 
-    def test_releve_du_jour_en_francais_et_en_anglais(self):
+    def test_releve_du_jour_est_en_anglais(self):
         self.assertEqual(self.releve("fr", "fr", "2026-09-28T14:30+02:00", True),
-                         "relevé à 14:30")
+                         "measured at 14:30")
         self.assertEqual(self.releve("en", "en-GB", "2026-09-28T14:30+02:00", True),
                          "measured at 14:30")
 
     def test_releve_ancien_dit_le_jour_puis_l_heure_dans_la_langue_de_la_page(self):
         self.assertEqual(self.releve("fr", "fr", "2026-09-26T10:05+02:00", False),
-                         "relevé du 26/09 à 10:05")
+                         "measured on 26/09 at 10:05")
         self.assertEqual(self.releve("en", "en-GB", "2026-09-26T10:05+02:00", False),
                          "measured on 26/09 at 10:05")
 
@@ -78,7 +78,7 @@ class TestsReleveEtTemperature(unittest.TestCase):
         # 23:59 à +02:00 reste le 28 : la page lit la date telle qu'envoyée au
         # lieu de la convertir dans son propre fuseau.
         self.assertEqual(self.releve("fr", "fr", "2026-09-28T23:59+02:00", False),
-                         "relevé du 28/09 à 23:59")
+                         "measured on 28/09 at 23:59")
 
     def test_sans_releve_ou_date_illisible_rien(self):
         self.assertIsNone(self.executer("fr", "dateReleve({measured_at: null}, 'fr')"))

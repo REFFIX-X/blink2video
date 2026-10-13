@@ -359,6 +359,8 @@ const I18N = {
     "suppressionAuto.unavailable": "Camera list unavailable.",
     "suppressionAuto.none": "No known camera yet.",
     "suppressionAuto.hint": "Once a clip is successfully downloaded, it is deleted from its source (local USB/microSD storage or subscription cloud, depending on the camera).",
+    "phase.working": "Working…",
+    "phase.update_noop": "Update finished without restarting the server.",
     "phase.inventory_clips": "Finding clips to download",
     "phase.download_clips": "Downloading clips",
     "phase.prepare_clips": "Preparing clips",
@@ -369,16 +371,18 @@ const I18N = {
     "phase.cloud_section": "Subscription cloud",
     "phase.usb_section": "Local storage: {hub}",
     "live.querying": "Querying the Blink system…",
-    "live.count": "{n} camera(s) · {m} with detection on",
+    "live.count": "{n} · {m} armed",
     "system.armed": "System armed", "system.disarmed": "System disarmed",
+    "system.armNext": "Click to disarm the system", "system.disarmNext": "Click to arm the system",
     "camera.offline": "OFFLINE", "camera.noeffect": "no effect, system disarmed",
-    "camera.detection.on": "Detection on", "camera.detection.off": "Detection off",
+    "camera.detection.on": "Armed", "camera.detection.off": "Disarmed",
+    "camera.armNext": "Click to disarm motion detection", "camera.disarmNext": "Click to arm motion detection",
     "camera.wake": "Wake", "camera.waking": "Waking…",
     "camera.wake.title": "Wakes the camera now (takes a photo). Uses a bit of battery, up to 2 minutes.",
     "camera.snapshot": "Snapshot", "camera.snapshotting": "Snapshot…",
     "camera.snapshot.saved": "Snapshot saved ✓",
     "camera.snapshot.title": "Takes a picture now and keeps it under Pictures. Uses a bit of battery, up to 2 minutes.",
-    "camera.continuous": "Continuous live",
+    "camera.continuous": "Keep live running",
     "camera.continuous.title": "Starts the live view again each time Blink closes it, after about 6 minutes, until you click Stop. A pause of about ten seconds marks each restart.",
     "camera.continuous.title.battery": "Starts the live view again each time Blink closes it, after about 6 minutes, until you click Stop. A pause of about ten seconds marks each restart. On this battery camera, an endless live view drains it quickly.",
     "camera.battery": "battery {v}", "camera.wifi": "Wi-Fi {v} dBm",
@@ -453,15 +457,12 @@ const I18N = {
     "refresh.disconnected": "\\nConnection lost.\\n",
   },
 };
-let _lang = "fr";
-function t(k) { return (I18N[_lang] && I18N[_lang][k]) || I18N.fr[k] || k; }
+let _lang = "en";
+function t(k) { return I18N.en[k] || k; }
 function tf(k, v) {
   let s = t(k);
   for (const p in (v || {})) s = s.split("{" + p + "}").join(v[p]);
   return s;
-}
-function detectLang() {
-  return (navigator.language || "en").toLowerCase().startsWith("fr") ? "fr" : "en";
 }
 function applyI18n() {
   document.documentElement.lang = _lang;
@@ -478,7 +479,9 @@ function applyI18n() {
     b.classList.toggle("active", b.dataset.langBtn === _lang));
 }
 function setLang(code, persist) {
-  _lang = code === "en" ? "en" : "fr";
+  // The family dashboard is intentionally English-only; ignore browser
+  // locale and any older language preference saved by this browser.
+  _lang = "en";
   applyI18n();
   // Valeur dynamique (PID du process), donc rendue ici plutôt que par
   // data-i18n, qui ne sait interpoler aucun paramètre dans sa traduction.
@@ -774,14 +777,11 @@ let miseAJourAttente = null;
 let generationMaj = 0;
 
 // Le serveur ne connaît jamais la langue affichée (choix propre à chaque
-// onglet, en localStorage) : un libellé de phase arrive donc toujours en
-// français, accompagné d'une clé stable quand une traduction existe. Clé
-// absente ou inconnue de ce dictionnaire : le texte reçu reste affiché tel
-// quel plutôt qu'une chaîne vide, qui masquerait un travail réellement en
-// cours (ex. bug vécu en vrai : « Téléchargement des clips » figé en
-// français quelle que soit la langue choisie).
+// onglet, en localStorage) : le serveur envoie une clé stable quand une
+// traduction de phase existe. For unknown phases, use a neutral English
+// fallback rather than displaying server text in another language.
 function libellePhase(cle, texteBrut, valeurs) {
-  if (!cle || !((I18N[_lang] && I18N[_lang][cle]) || I18N.fr[cle])) return texteBrut;
+  if (!cle || !I18N.en[cle]) return t("phase.working");
   return valeurs ? tf(cle, valeurs) : t(cle);
 }
 
@@ -1063,7 +1063,8 @@ function renderLive() {
   const cameras = system.systems.reduce((n, s) => n + camerasVisibles(s).length, 0);
   const armed = system.systems.reduce(
     (n, s) => n + camerasVisibles(s).filter((c) => c.armed).length, 0);
-  $("count").textContent = tf("live.count", { n: cameras, m: armed });
+  const cameraLabel = cameras === 1 ? "1 camera" : `${cameras} cameras`;
+  $("count").textContent = tf("live.count", { n: cameraLabel, m: armed });
 
   $("list").innerHTML = system.systems.map((s) => `
     <h2>
@@ -1073,7 +1074,8 @@ function renderLive() {
         s.module_serial].filter(Boolean).join(" · "))}</span>
       <button class="act ${s.armed ? "in" : "out"}"
               data-action="arm" data-scope="system" data-name="${h(s.key)}"
-              data-armed="${!s.armed}">
+              data-armed="${!s.armed}"
+              title="${h(t(s.armed ? "system.armNext" : "system.disarmNext"))}">
         ${h(s.armed ? t("system.armed") : t("system.disarmed"))}
       </button>
     </h2>
@@ -1136,7 +1138,7 @@ function cameraCard(c, systemArmed) {
     date,
     c.armed && !systemArmed ? t("camera.noeffect") : null,
   ].filter(Boolean).join(" · ");
-  return `<div class="card ${c.offline ? "out" : ""}">
+  return `<div class="card camera-card ${c.offline ? "out" : ""}">
     <div class="live" id="live-${cssId(c.key)}">${repos(c.key, t("watch.live"))}</div>
     <div class="meta">
       <div>
@@ -1149,13 +1151,10 @@ function cameraCard(c, systemArmed) {
       </div>
       <button class="act ${c.armed ? "in" : "out"}"
               data-action="arm" data-scope="camera" data-name="${h(c.key)}"
-              data-armed="${!c.armed}">
+              data-armed="${!c.armed}"
+              title="${h(t(c.armed ? "camera.armNext" : "camera.disarmNext"))}">
         ${h(c.armed ? t("camera.detection.on") : t("camera.detection.off"))}
       </button>
-      <button class="act grouped" title="${h(t("camera.wake.title"))}"
-              data-action="wake" data-name="${h(c.key)}">${h(t("camera.wake"))}</button>
-      <button class="act grouped" title="${h(t("camera.snapshot.title"))}"
-              data-action="snapshot" data-name="${h(c.key)}">${h(t("camera.snapshot"))}</button>
       <label class="act grouped continu"
              title="${h(t(c.battery ? "camera.continuous.title.battery" : "camera.continuous.title"))}">
         <input type="checkbox" data-action="continu" data-name="${h(c.key)}"${directContinu(c.key) ? " checked" : ""}>
@@ -3691,21 +3690,10 @@ document.querySelectorAll("[data-lang-btn]").forEach((button) => {
   button.onclick = () => setLang(button.dataset.langBtn, true);
 });
 
-// Vue par défaut posée AVANT setLang() : celui-ci appelle render(), qui lit
-// $("view").value pour décider quoi peindre. Sans cadre du navigateur pour
-// distinguer une option "selected" ici, la valeur par défaut du <select>
-// serait la première déclarée (Direct) - render() y déclencherait alors un
-// appel réseau vers /api/system dont la réponse, arrivée en retard, écrase
-// la liste de clips déjà affichée sans que le menu déroulant ne bouge (bug
-// vécu en conditions réelles : la page « repassait en Direct toute seule »).
-$("view").value = "clips";
-// Override manuel mémorisé prioritaire ; sinon la langue du navigateur, comme
-// au premier lancement de lidar2map. Placé ici, en fin de script : setLang()
-// appelle render()/renderLive(), qui référencent des `let` déclarés plus haut
-// (MSE_ABORT, actualisationLocale...) — appelé trop tôt, avant l'exécution de
-// ces déclarations, ça lève ReferenceError (zone morte temporelle), comme vu
-// en testant réellement au navigateur.
-setLang(localStorage.getItem("lang") || detectLang(), false);
+// Keep the hidden route selector on Live before setLang() renders the page.
+$("view").value = "live";
+// Placed at the end because rendering references state initialized above.
+setLang("en", false);
 
 load();
 // E-01 : connexion puis réglages s'enchaînent dans le même onglet. Le second

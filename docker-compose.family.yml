@@ -1,0 +1,26 @@
+# Dockhand stack for WebRTC on a trusted home LAN.
+# Host networking lets the browser reach aiortc's ICE/UDP media candidates;
+# Docker bridge networking only forwards the dashboard's TCP port.
+# Keep 192.168.1.6 reserved for the Docker host and do not port-forward any
+# ports from the internet. The dashboard has no user accounts of its own.
+services:
+  blink2video:
+    image: blink2video-family:0.22.1
+    build:
+      context: https://github.com/REFFIX-X/blink2video.git#v0.22.1
+    container_name: blink2video
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      BLINK_BIND: 192.168.1.6
+    command:
+      - python
+      - blink2video.py
+      - start
+      - --trusted-host
+      - 192.168.1.0/24
+    volumes:
+      - blink2video_data:/data
+
+volumes:
+  blink2video_data:

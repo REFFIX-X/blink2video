@@ -5,9 +5,9 @@ Node, avec un DOM et une horloge simulés ; ils ne voient ni la page entière, n
 la mise en page, ni les vrais événements. Ici, le serveur de page (serve.py) est
 lancé depuis les sources, avec un BLINK_HOME jetable et sans compte Blink, et
 Playwright (bibliothèque de Microsoft qui pilote un vrai Chromium) charge la
-page : aucune erreur JavaScript ni réponse en échec, bascule FR / EN, dialogue
-Réglages et ses onglets, changement de vue. Rien n'y contacte Blink : le
-bouton Actualiser n'est jamais pressé.
+page : aucune erreur JavaScript ni réponse en échec, interface anglaise malgré
+un navigateur français, vue Live seule et dialogue Settings. Rien n'y contacte
+Blink : le bouton Refresh n'est jamais pressé.
 
 Jumeau de test_page_navigateur.py de gpxsolar et de lidar2map. Sans
 Playwright, le test est sauté ; la CI l'installe (job « navigateur »).
@@ -110,14 +110,16 @@ class PageBlink2video(unittest.TestCase):
         self.contexte.close()
         self.assertEqual(self.erreurs, [])
 
-    def test_la_page_se_charge_et_change_de_langue(self):
-        expect(self.page.locator("#refresh")).to_have_text("↻ Actualiser")
-        self.page.locator('header [data-lang-btn="en"]').click()
+    def test_la_page_est_anglais_meme_avec_un_navigateur_francais(self):
         expect(self.page.locator("html")).to_have_attribute("lang", "en")
         expect(self.page.locator("#refresh")).to_have_text("↻ Refresh")
         expect(self.page.locator("#reglagesButton")).to_have_text("⚙ Settings…")
-        self.page.locator('header [data-lang-btn="fr"]').click()
-        expect(self.page.locator("#refresh")).to_have_text("↻ Actualiser")
+        expect(self.page.locator("[data-lang-btn]")).to_have_count(0)
+
+    def test_le_tableau_de_bord_ne_propose_que_le_direct(self):
+        expect(self.page.locator("#view")).to_have_value("live")
+        expect(self.page.locator("#view option")).to_have_count(1)
+        expect(self.page.locator("#view option")).to_have_attribute("value", "live")
 
     def test_le_dialogue_reglages_et_ses_onglets(self):
         self.page.locator("#reglagesButton").click()
@@ -129,13 +131,6 @@ class PageBlink2video(unittest.TestCase):
         expect(self.page.locator("#panelGeneral")).to_be_visible()
         self.page.keyboard.press("Escape")
         expect(reglages).to_be_hidden()
-
-    def test_le_changement_de_vue(self):
-        self.page.locator("#view").select_option("pictures")
-        expect(self.page.locator("#view")).to_have_value("pictures")
-        self.page.locator("#view").select_option("clips")
-        expect(self.page.locator("#view")).to_have_value("clips")
-
 
 if __name__ == "__main__":
     unittest.main()

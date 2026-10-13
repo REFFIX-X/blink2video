@@ -76,7 +76,7 @@ const lireJSON = async () => {
         self.assertEqual(etat["libelle"], etat["libelleInitial"])
         self.assertEqual(len(etat["messages"]), 1)
         self.assertIn("Failed to fetch", etat["messages"][0])
-        self.assertIn("n'a pas pu être lancée", etat["messages"][0])
+        self.assertIn("could not be started", etat["messages"][0])
         self.assertIsNone(etat["attente"])
 
     def test_reponse_illisible_rend_aussi_le_bouton(self):
@@ -101,9 +101,9 @@ const lireJSON = async () => {
         self.assertEqual(etat["messages"], [])
         self.assertEqual(etat["attente"], 7)
 
-    def test_les_deux_langues_ont_le_libelle(self):
+    def test_le_libelle_anglais_est_present(self):
         source = (Path(__file__).parent / "serve_app.js").read_text(encoding="utf-8")
-        self.assertEqual(source.count('"update.failed": '), 2)
+        self.assertEqual(source.count('"update.failed": '), 2)  # dormant legacy dictionary plus active English text
 
 
 if __name__ == "__main__":

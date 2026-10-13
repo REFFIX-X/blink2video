@@ -116,18 +116,16 @@ const alert = () => { if (!REFUS) throw Error('alerte inattendue'); };
         return json.loads(resultat.stdout)
 
     def verifier(self, actif):
-        for langue, texte in (("fr", "Installer 0.99.0"), ("en", "Install 0.99.0")):
-            with self.subTest(langue=langue):
-                resultat = self.executer(langue, actif)
-                self.assertTrue(resultat["geles"])
-                self.assertEqual(resultat["controles"], [False] * 4)
-                self.assertEqual(resultat["bouton"], {
-                    "disabled": False, "texte": texte, "encours": False})
-                self.assertEqual(resultat["refresh"], actif)
-                self.assertEqual(resultat["phase"], "Échec de l'arrêt")
-                self.assertIsNone(resultat["attente"])
-                self.assertEqual(resultat["intervallesAnnules"], [7])
-                self.assertEqual(resultat["rechargements"], int(not actif))
+        resultat = self.executer("en", actif)
+        self.assertTrue(resultat["geles"])
+        self.assertEqual(resultat["controles"], [False] * 4)
+        self.assertEqual(resultat["bouton"], {
+            "disabled": False, "texte": "Install 0.99.0", "encours": False})
+        self.assertEqual(resultat["refresh"], actif)
+        self.assertEqual(resultat["phase"], "Update finished without restarting the server.")
+        self.assertIsNone(resultat["attente"])
+        self.assertEqual(resultat["intervallesAnnules"], [7])
+        self.assertEqual(resultat["rechargements"], int(not actif))
 
     def test_echec_sans_autre_travail(self):
         self.verifier(False)
@@ -143,9 +141,9 @@ const alert = () => { if (!REFUS) throw Error('alerte inattendue'); };
         self.assertEqual(resultat["intervallesAnnules"], [7])
 
     def test_reessai_refuse_retablit_le_libelle_du_bouton(self):
-        resultat = self.executer("fr", True, refus=True)
+        resultat = self.executer("en", True, refus=True)
         self.assertEqual(resultat["bouton"], {
-            "disabled": False, "texte": "Installer 0.99.0", "encours": False})
+            "disabled": False, "texte": "Install 0.99.0", "encours": False})
 
     def test_sonde_pendant_le_post_ne_debloque_pas_le_bouton(self):
         resultat = self.executer("en", True, retard_post=True)
@@ -153,7 +151,7 @@ const alert = () => { if (!REFUS) throw Error('alerte inattendue'); };
         self.assertTrue(resultat["geles"])
 
     def test_ancien_delai_ne_debloque_pas_le_reessai(self):
-        resultat = self.executer("fr", True, reessai=True)
+        resultat = self.executer("en", True, reessai=True)
         self.assertTrue(resultat["ancienDelaiIgnore"])
         self.assertTrue(resultat["nouveauDelaiApplique"])
 

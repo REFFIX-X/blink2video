@@ -4683,7 +4683,7 @@ class Handler(serveweb.Handler):
 
 
 PAGE = """<!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -4696,17 +4696,12 @@ __CSS__
 <body>
 <header>
   <h1>blink2video<span class="v">__VERSION__ (<span id="pidServeur"></span>)</span></h1>
-  <select id="view">
-    <option value="live" data-i18n="view.live">Directs Vues</option>
-    <option value="direct" data-i18n="view.direct">Directs Enregistrements</option>
-    <option value="clips" data-i18n="view.clips">Détections Enregistrements</option>
-    <option value="daily" data-i18n="view.daily">Détections Journalières</option>
-    <option value="weekly" data-i18n="view.weekly">Détections Hebdomadaires</option>
-    <option value="monthly" data-i18n="view.monthly">Détections Mensuelles</option>
-    <option value="pictures" data-i18n="view.pictures">Photos</option>
+  <span class="live-label">LIVE MONITOR</span>
+  <select id="view" aria-label="Dashboard view" tabindex="-1" aria-hidden="true">
+    <option value="live" data-i18n="view.live">Live cameras</option>
   </select>
   <button id="filtreButton" data-i18n="filtre.button" data-i18n-title="filtre.button.title"
-          title="Filtrer">🔍 Filtre</button>
+          title="Filter">🔍 Filter</button>
   <span class="filtreResume" id="filtreResume"></span>
   <span class="filtreResume" id="filtreCompte"></span>
   <span class="count" id="count"></span>
@@ -4716,41 +4711,28 @@ __CSS__
     <button id="update" hidden></button>
     <span class="sub tiny" id="passages"></span>
     <button class="danger" id="applyButton" hidden></button>
-    <button class="primary" id="refresh" data-i18n="btn.refresh">↻ Actualiser</button>
-    <button id="reglagesButton" data-i18n="btn.reglages" data-i18n-title="btn.reglages.title" title="Réglages">⚙ Réglages…</button>
+    <button class="primary" id="refresh" data-i18n="btn.refresh">↻ Refresh</button>
+    <button id="reglagesButton" data-i18n="btn.reglages" data-i18n-title="btn.reglages.title" title="Settings">⚙ Settings</button>
   </div>
-  <span class="langGroup" title="Langue / Language">
-    <button class="btn-lang" data-lang-btn="fr">FR</button>
-    <button class="btn-lang" data-lang-btn="en">EN</button>
-  </span>
   <div id="work"><span id="phase"></span><progress id="bar"></progress></div>
 </header>
 <main><div id="list"></div><pre id="log"></pre></main>
 
 <dialog id="auth">
-  <!-- Boîte modale : le fond assombri masque et rend inatteignables les
-       boutons FR/EN de l'en-tête tant qu'elle est ouverte (showModal()).
-       Doublon minimal ici, seul moyen de changer de langue avant de se
-       connecter. -->
-  <span class="langGroup langGroupAuth" title="Langue / Language">
-    <button class="btn-lang" data-lang-btn="fr">FR</button>
-    <button class="btn-lang" data-lang-btn="en">EN</button>
-  </span>
-  <h3 id="authTitle" data-i18n="auth.title">Connexion Blink</h3>
-  <p id="authHint" data-i18n="auth.hint">Le mot de passe sert uniquement à ouvrir la session ; seuls
-     les jetons sont enregistrés, jamais le mot de passe.</p>
+  <h3 id="authTitle" data-i18n="auth.title">Blink login</h3>
+  <p id="authHint" data-i18n="auth.hint">Your password is only used to sign in. The app stores session tokens, never your password.</p>
   <p id="authError"></p>
   <div id="authCreds">
-    <input id="user" type="email" data-i18n-placeholder="auth.email" placeholder="Adresse e-mail" autocomplete="username">
+    <input id="user" type="email" data-i18n-placeholder="auth.email" placeholder="Email address" autocomplete="username">
     <div class="champMdp">
-      <input id="pass" type="password" data-i18n-placeholder="auth.password" placeholder="Mot de passe"
+      <input id="pass" type="password" data-i18n-placeholder="auth.password" placeholder="Password"
              autocomplete="current-password">
       <button type="button" id="passToggle" data-i18n="auth.show"
-              aria-label="Afficher le mot de passe">Afficher</button>
+              aria-label="Show password">Show</button>
     </div>
   </div>
   <div id="authCode" hidden>
-    <input id="code" inputmode="numeric" data-i18n-placeholder="auth.code" placeholder="Code reçu par SMS ou e-mail"
+    <input id="code" inputmode="numeric" data-i18n-placeholder="auth.code" placeholder="Code received by SMS or email"
            autocomplete="one-time-code">
   </div>
   <div class="row">

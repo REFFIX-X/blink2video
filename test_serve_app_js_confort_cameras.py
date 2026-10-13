@@ -158,7 +158,7 @@ class VuesDirect(unittest.TestCase):
         # armement, et dit pourquoi sa grille est vide.
         self.assertIn("Loft", html)
         self.assertIn("live.toutesMasquees", html)
-        self.assertIn('"n":2', r["compte"])
+        self.assertIn('"n":"2 cameras"', r["compte"])
         self.assertIn('"m":1', r["compte"])
 
     def test_rien_n_est_masque_par_defaut(self):

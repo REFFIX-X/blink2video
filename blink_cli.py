@@ -23,7 +23,10 @@ from pathlib import Path
 
 import runtime
 
-import blink_registre
+# Keep the CLI entry point importable before the source bootstrap has installed
+# third-party dependencies. The registry's default output path is deterministic
+# and can be derived from runtime without importing its Blink model helpers.
+_DEFAULT_CLIP_OUTPUT = runtime.dossier_sorties() / "Blink_Clips"
 
 
 def parse_args() -> argparse.Namespace:
@@ -87,8 +90,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=Path,
-        default=blink_registre.OUTPUT,
-        help=msg("aide_output", defaut=blink_registre.OUTPUT),
+        default=_DEFAULT_CLIP_OUTPUT,
+        help=msg("aide_output", defaut=_DEFAULT_CLIP_OUTPUT),
     )
     parser.add_argument(
         "--overwrite",
@@ -959,6 +962,10 @@ def executer(groupes: list) -> int:
         # en parallèle, tous deux passant la vérification du port avant que
         # le premier n'ait fini de démarrer. Le second cède la place plutôt
         # que de tenter un démarrage concurrent.
+        # Bootstrap avant le verrou : son premier lancement relance le processus
+        # dans le venv. Si le verrou est déjà tenu, la relance se prend pour un
+        # second « start » et abandonne avant d'avoir pu démarrer le serveur.
+        runtime.bootstrap()
         try:
             with runtime.verrou("start", "start", attente=0):
                 # Une instance écoute déjà : « start » se comporte alors
@@ -977,8 +984,11 @@ def executer(groupes: list) -> int:
                 # fraîche ferait sauter à tort le panneau initial. Le marqueur
                 # « en attente » de runtime garde aussi cette décision après
                 # une fermeture du navigateur au milieu du parcours.
+                # Ce contrôle peut écrire son marqueur de premier démarrage
+                # via nico579_commons.atomique ; il doit donc suivre l'amorçage
+                # sur une installation source neuve, tout en précédant la
+                # connexion Blink.
                 configuration_initiale = runtime.configuration_initiale_requise()
-                runtime.bootstrap()
                 import blink_auth
                 etat = asyncio.run(blink_auth.preflight())
                 if not etat["authenticated"] or configuration_initiale:
