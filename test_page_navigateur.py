@@ -97,6 +97,12 @@ class PageBlink2video(unittest.TestCase):
     def setUp(self):
         self.contexte = self.navigateur.new_context(locale="fr-FR", viewport={"width": 1280, "height": 800})
         self.page = self.contexte.new_page()
+        # Live is the default view now, so it reads the Blink system on load.
+        # Keep this browser test independent of credentials and Blink service
+        # availability by supplying an empty, successful system response.
+        self.page.route("**/api/system", lambda route: route.fulfill(
+            status=200, content_type="application/json",
+            body='{"error":null,"systems":[]}'))
         self.erreurs = []
         self.page.on("pageerror", lambda erreur: self.erreurs.append(str(erreur)))
         self.page.on("console", lambda message: self.erreurs.append(message.text)

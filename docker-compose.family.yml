@@ -5,9 +5,9 @@
 # ports from the internet. The dashboard has no user accounts of its own.
 services:
   blink2video:
-    image: blink2video-family:0.22.1
+    image: blink2video-family:0.22.2
     build:
-      context: https://github.com/REFFIX-X/blink2video.git#v0.22.1
+      context: https://github.com/REFFIX-X/blink2video.git#v0.22.2
     container_name: blink2video
     restart: unless-stopped
     network_mode: host
